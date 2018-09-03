@@ -1,0 +1,95 @@
+#!/usr/bin/env bash
+
+set -eu
+
+RUN_DIR=/var/vcap/sys/run/thanos_compactor
+LOG_DIR=/var/vcap/sys/log/thanos_compactor
+TMP_DIR=/var/vcap/sys/tmp/thanos_compactor
+STORE_DIR=/var/vcap/store/thanos_compactor
+mkdir -p ${RUN_DIR} ${LOG_DIR} ${TMP_DIR} ${STORE_DIR}
+
+PIDFILE=${RUN_DIR}/thanos_compactor.pid
+
+source /var/vcap/packages/thanos/common/utils.sh
+exec 1>> ${LOG_DIR}/$(basename "$0").stdout.log
+exec 2>> ${LOG_DIR}/$(basename "$0").stderr.log
+
+export PATH=/var/vcap/packages/thanos/bin:${PATH}
+
+case $1 in
+  start)
+    pid_guard ${PIDFILE} "thanos_compactor"
+    echo $$ > ${PIDFILE}
+
+    <% if_p('env.http_proxy') do |http_proxy| %>
+    export HTTP_PROXY="<%= http_proxy %>"
+    export http_proxy="<%= http_proxy %>"
+    <% end %>
+    <% if_p('env.https_proxy') do |https_proxy| %>
+    export HTTPS_PROXY="<%= https_proxy %>"
+    export https_proxy="<%= https_proxy %>"
+    <% end %>
+    <% if_p('env.no_proxy') do |no_proxy| %>
+    export NO_PROXY="<%= no_proxy %>"
+    export no_proxy="<%= no_proxy %>"
+    <% end %>
+
+    <% if_p('thanos_compactor.gcs.application_credentials') do %>
+    export GOOGLE_APPLICATION_CREDENTIALS="/var/vcap/jobs/thanos_compactor/config/google_application_credentials.json"
+    <% end %>
+
+    <% if_p('thanos_compactor.s3.secret_key') do |secret_key| %> \
+    export S3_SECRET_KEY="<%= secret_key %>"
+    <% end %>
+
+    exec thanos compact --wait \
+      <% if_p('thanos_compactor.log_level') do |log_level| %> \
+      --log.level="<%= log_level %>" \
+      <% end %> \
+      <% if_p('thanos_compactor.gcloudtrace.project') do |project| %> \
+      --gcloudtrace.project="<%= project %>" \
+      <% end %> \
+      <% if_p('thanos_compactor.gcloudtrace.sample_factor') do |sample_factor| %> \
+      --gcloudtrace.sample-factor="<%= sample_factor %>" \
+      <% end %> \
+      --http-address="<%= spec.ip %>:<%= p('thanos_compactor.http.port') %>" \
+      --data-dir="${STORE_DIR}" \
+      <% if_p('thanos_compactor.gcs.bucket') do |bucket| %> \
+      --gcs.bucket="<%= bucket %>" \
+      <% end %> \
+      <% if_p('thanos_compactor.s3.bucket') do |bucket| %> \
+      --s3.bucket="<%= bucket %>" \
+      <% end %> \
+      <% if_p('thanos_compactor.s3.endpoint') do |endpoint| %> \
+      --s3.endpoint="<%= endpoint %>" \
+      <% end %> \
+      <% if_p('thanos_compactor.s3.access_key') do |access_key| %> \
+      --s3.access-key="<%= access_key %>" \
+      <% end %> \
+      <% if_p('thanos_compactor.s3.insecure') do |insecure| %> \
+      <%= insecure ? "--s3.insecure " : "" %> \
+      <% end %> \
+      <% if_p('thanos_compactor.s3.signature_version2') do |signature_version2| %> \
+      <%= signature_version2 ? "--s3.signature-version2 " : "" %> \
+      <% end %> \
+      <% if_p('thanos_compactor.s3.encrypt_sse') do |encrypt_sse| %> \
+      <%= encrypt_sse ? "--s3.encrypt-sse " : "" %> \
+      <% end %> \
+      <% if_p('thanos_compactor.sync_delay') do |sync_delay| %> \
+      --sync-delay="<%= sync_delay %>" \
+      <% end %> \
+      >>  ${LOG_DIR}/thanos_compactor.stdout.log \
+      2>> ${LOG_DIR}/thanos_compactor.stderr.log
+    ;;
+
+  stop)
+    kill_and_wait ${PIDFILE}
+    ;;
+
+  *)
+    echo "Usage: $0 {start|stop}"
+    exit 1
+  ;;
+
+esac
+exit 0

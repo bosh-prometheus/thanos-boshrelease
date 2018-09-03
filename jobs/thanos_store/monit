@@ -1,0 +1,5 @@
+check process thanos_store
+  with pidfile /var/vcap/sys/run/thanos_store/thanos_store.pid
+  start program "/var/vcap/jobs/thanos_store/bin/thanos_store_ctl start"
+  stop program "/var/vcap/jobs/thanos_store/bin/thanos_store_ctl stop"
+  group vcap

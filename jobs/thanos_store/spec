@@ -1,0 +1,77 @@
+---
+name: thanos_store
+
+packages:
+  - thanos
+
+templates:
+  bin/thanos_store_ctl: bin/thanos_store_ctl
+  config/google_application_credentials.json: config/google_application_credentials.json
+
+provides:
+  - name: thanos_store
+    type: thanos_store
+    properties:
+      - thanos_store.cluster.port
+
+consumes:
+  - name: thanos_query
+    type: thanos_query
+    optional: true
+  - name: thanos_sidecar
+    type: thanos_sidecar
+    optional: true
+  - name: thanos_store
+    type: thanos_store
+
+properties:
+  thanos_store.log_level:
+    description: "Log filtering level"
+  thanos_store.gcloudtrace.project:
+    description: "GCP project to send Google Cloud Trace tracings to. If empty, tracing will be disabled"
+  thanos_store.gcloudtrace.sample_factor:
+    description: "How often we send traces (1/<sample-factor>). If 0 no trace will be sent periodically, unless forced by baggage item"
+  thanos_store.grpc.port:
+    description: "Listen port for gRPC endpoints (StoreAPI)"
+    default: "10901"
+  thanos_store.http.port:
+    description: "Listen port for HTTP endpoints"
+    default: "10902"
+  thanos_store.cluster.port:
+    description: "Listen port for gossip cluster"
+    default: "10900"
+  thanos_store.cluster.gossip_interval:
+    description: "Interval between sending gossip messages. By lowering this value (more frequent) gossip messages are propagated across the cluster more quickly at the expense of increased bandwidth"
+  thanos_store.cluster.pushpull_interval:
+    description: "Interval for gossip state syncs. Setting this interval lower (more frequent) will increase convergence speeds across larger clusters at the expense of increased bandwidth usage"
+  thanos_store.cluster.refresh_interval:
+    description: "Interval for membership to refresh cluster.peers state, 0 disables refresh"
+  thanos_store.gcs.application_credentials:
+    description: "Google JSON key"
+  thanos_store.gcs.bucket:
+    description: "Google Cloud Storage bucket name for stored blocks"
+  thanos_store.s3.bucket:
+    description: "S3-Compatible API bucket name for stored blocks"
+  thanos_store.s3.endpoint:
+    description: "S3-Compatible API endpoint for stored blocks"
+  thanos_store.s3.access_key:
+    description: "Access key for an S3-Compatible API"
+  thanos_store.s3.secret_key:
+    description: "Secret key for an S3-Compatible API"
+  thanos_store.s3.insecure:
+    description: "Whether to use an insecure connection with an S3-Compatible API"
+  thanos_store.s3.signature_version2:
+    description: "Whether to use S3 Signature Version 2; otherwise Signature Version 4 will be used"
+  thanos_store.s3.encrypt_sse:
+    description: "Whether to use Server Side Encryption"
+  thanos_store.index_cache_size:
+    description: "Maximum size of items held in the index cache"
+  thanos_store.chunk_pool_size:
+    description: "Maximum size of concurrently allocatable bytes for chunks"
+
+  env.http_proxy:
+    description: "HTTP proxy to use"
+  env.https_proxy:
+    description: "HTTPS proxy to use"
+  env.no_proxy:
+    description: "List of comma-separated hosts that should skip connecting to the proxy"

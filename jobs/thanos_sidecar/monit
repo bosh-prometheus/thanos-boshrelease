@@ -1,0 +1,5 @@
+check process thanos_sidecar
+  with pidfile /var/vcap/sys/run/thanos_sidecar/thanos_sidecar.pid
+  start program "/var/vcap/jobs/thanos_sidecar/bin/thanos_sidecar_ctl start"
+  stop program "/var/vcap/jobs/thanos_sidecar/bin/thanos_sidecar_ctl stop"
+  group vcap

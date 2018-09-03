@@ -1,0 +1,83 @@
+---
+name: thanos_sidecar
+
+packages:
+  - thanos
+
+templates:
+  bin/thanos_sidecar_ctl: bin/thanos_sidecar_ctl
+  config/google_application_credentials.json: config/google_application_credentials.json
+
+provides:
+  - name: thanos_sidecar
+    type: thanos_sidecar
+    properties:
+      - thanos_sidecar.cluster.port
+
+consumes:
+  - name: prometheus
+    type: prometheus
+  - name: thanos_query
+    type: thanos_query
+    optional: true
+  - name: thanos_sidecar
+    type: thanos_sidecar
+  - name: thanos_store
+    type: thanos_store
+    optional: true
+
+properties:
+  thanos_sidecar.log_level:
+    description: "Log filtering level"
+  thanos_sidecar.gcloudtrace.project:
+    description: "GCP project to send Google Cloud Trace tracings to. If empty, tracing will be disabled"
+  thanos_sidecar.gcloudtrace.sample_factor:
+    description: "How often we send traces (1/<sample-factor>). If 0 no trace will be sent periodically, unless forced by baggage item"
+  thanos_sidecar.grpc.port:
+    description: "Listen port for gRPC endpoints (StoreAPI)"
+    default: "10901"
+  thanos_sidecar.http.port:
+    description: "Listen port for HTTP endpoints"
+    default: "10902"
+  thanos_sidecar.cluster.port:
+    description: "Listen port for gossip cluster"
+    default: "10900"
+  thanos_sidecar.cluster.gossip_interval:
+    description: "Interval between sending gossip messages. By lowering this value (more frequent) gossip messages are propagated across the cluster more quickly at the expense of increased bandwidth"
+  thanos_sidecar.cluster.pushpull_interval:
+    description: "Interval for gossip state syncs. Setting this interval lower (more frequent) will increase convergence speeds across larger clusters at the expense of increased bandwidth usage"
+  thanos_sidecar.cluster.refresh_interval:
+    description: "Interval for membership to refresh cluster.peers state, 0 disables refresh"
+  thanos_sidecar.tsdb.path:
+    description: "Data directory of TSDB"
+    default: "/var/vcap/store/prometheus2"
+  thanos_sidecar.gcs.application_credentials:
+    description: "Google JSON key"
+  thanos_sidecar.gcs.bucket:
+    description: "Google Cloud Storage bucket name for stored blocks"
+  thanos_sidecar.s3.bucket:
+    description: "S3-Compatible API bucket name for stored blocks"
+  thanos_sidecar.s3.endpoint:
+    description: "S3-Compatible API endpoint for stored blocks"
+  thanos_sidecar.s3.access_key:
+    description: "Access key for an S3-Compatible API"
+  thanos_sidecar.s3.secret_key:
+    description: "Secret key for an S3-Compatible API"
+  thanos_sidecar.s3.insecure:
+    description: "Whether to use an insecure connection with an S3-Compatible API"
+  thanos_sidecar.s3.signature_version2:
+    description: "Whether to use S3 Signature Version 2; otherwise Signature Version 4 will be used"
+  thanos_sidecar.s3.encrypt_sse:
+    description: "Whether to use Server Side Encryption"
+  thanos_sidecar.reloader.config_file:
+    description: "Config file watched by the reloader"
+    default: "/var/vcap/jobs/prometheus2/config/prometheus.yml"
+  thanos_sidecar.reloader.rule_dir:
+    description: "Rule directory for the reloader to refresh"
+
+  env.http_proxy:
+    description: "HTTP proxy to use"
+  env.https_proxy:
+    description: "HTTPS proxy to use"
+  env.no_proxy:
+    description: "List of comma-separated hosts that should skip connecting to the proxy"

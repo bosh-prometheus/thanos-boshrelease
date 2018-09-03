@@ -1,0 +1,47 @@
+---
+name: thanos_compactor
+
+packages:
+  - thanos
+
+templates:
+  bin/thanos_compactor_ctl: bin/thanos_compactor_ctl
+  config/google_application_credentials.json: config/google_application_credentials.json
+
+properties:
+  thanos_compactor.log_level:
+    description: "Log filtering level"
+  thanos_compactor.gcloudtrace.project:
+    description: "GCP project to send Google Cloud Trace tracings to. If empty, tracing will be disabled"
+  thanos_compactor.gcloudtrace.sample_factor:
+    description: "How often we send traces (1/<sample-factor>). If 0 no trace will be sent periodically, unless forced by baggage item"
+  thanos_compactor.http.port:
+    description: "Listen port for HTTP endpoints"
+    default: "10902"
+  thanos_compactor.gcs.application_credentials:
+    description: "Google JSON key"
+  thanos_compactor.gcs.bucket:
+    description: "Google Cloud Storage bucket name for stored blocks"
+  thanos_compactor.s3.bucket:
+    description: "S3-Compatible API bucket name for stored blocks"
+  thanos_compactor.s3.endpoint:
+    description: "S3-Compatible API endpoint for stored blocks"
+  thanos_compactor.s3.access_key:
+    description: "Access key for an S3-Compatible API"
+  thanos_compactor.s3.secret_key:
+    description: "Secret key for an S3-Compatible API"
+  thanos_compactor.s3.insecure:
+    description: "Whether to use an insecure connection with an S3-Compatible API"
+  thanos_compactor.s3.signature_version2:
+    description: "Whether to use S3 Signature Version 2; otherwise Signature Version 4 will be used"
+  thanos_compactor.s3.encrypt_sse:
+    description: "Whether to use Server Side Encryption"
+  thanos_compactor.sync_delay:
+    description: "Minimum age of fresh (non-compacted) blocks before they are being processed"
+
+  env.http_proxy:
+    description: "HTTP proxy to use"
+  env.https_proxy:
+    description: "HTTPS proxy to use"
+  env.no_proxy:
+    description: "List of comma-separated hosts that should skip connecting to the proxy"

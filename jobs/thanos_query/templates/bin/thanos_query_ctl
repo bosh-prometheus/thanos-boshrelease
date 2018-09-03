@@ -1,0 +1,98 @@
+#!/usr/bin/env bash
+
+set -eu
+
+RUN_DIR=/var/vcap/sys/run/thanos_query
+LOG_DIR=/var/vcap/sys/log/thanos_query
+TMP_DIR=/var/vcap/sys/tmp/thanos_query
+STORE_DIR=/var/vcap/store/thanos_query
+mkdir -p ${RUN_DIR} ${LOG_DIR} ${TMP_DIR} ${STORE_DIR}
+
+PIDFILE=${RUN_DIR}/thanos_query.pid
+
+source /var/vcap/packages/thanos/common/utils.sh
+exec 1>> ${LOG_DIR}/$(basename "$0").stdout.log
+exec 2>> ${LOG_DIR}/$(basename "$0").stderr.log
+
+export PATH=/var/vcap/packages/thanos/bin:${PATH}
+
+case $1 in
+  start)
+    pid_guard ${PIDFILE} "thanos_query"
+    echo $$ > ${PIDFILE}
+
+    <% if_p('env.http_proxy') do |http_proxy| %>
+    export HTTP_PROXY="<%= http_proxy %>"
+    export http_proxy="<%= http_proxy %>"
+    <% end %>
+    <% if_p('env.https_proxy') do |https_proxy| %>
+    export HTTPS_PROXY="<%= https_proxy %>"
+    export https_proxy="<%= https_proxy %>"
+    <% end %>
+    <% if_p('env.no_proxy') do |no_proxy| %>
+    export NO_PROXY="<%= no_proxy %>"
+    export no_proxy="<%= no_proxy %>"
+    <% end %>
+
+    exec thanos query \
+      <% if_p('thanos_query.log_level') do |log_level| %> \
+      --log.level="<%= log_level %>" \
+      <% end %> \
+      <% if_p('thanos_query.gcloudtrace.project') do |project| %> \
+      --gcloudtrace.project="<%= project %>" \
+      <% end %> \
+      <% if_p('thanos_query.gcloudtrace.sample_factor') do |sample_factor| %> \
+      --gcloudtrace.sample-factor="<%= sample_factor %>" \
+      <% end %> \
+      --grpc-address="<%= spec.ip %>:<%= p('thanos_query.grpc.port') %>" \
+      --http-address="<%= spec.ip %>:<%= p('thanos_query.http.port') %>" \
+      --cluster.address="<%= spec.ip %>:<%= p('thanos_query.cluster.port') %>" \
+      <% link('thanos_query').instances.map do |instance| %> \
+      --cluster.peers="<%= instance.address %>:<%= link('thanos_query').p('thanos_query.cluster.port') %>" \
+      <% end %> \
+      <% if_link('thanos_sidecar') do |thanos_sidecar| %> \
+        <% thanos_sidecar.instances.map do |instance| %> \
+      --cluster.peers="<%= instance.address %>:<%= thanos_sidecar.p('thanos_sidecar.cluster.port') %>" \
+        <% end %> \
+      <% end %> \
+      <% if_link('thanos_store') do |thanos_store| %> \
+        <% thanos_store.instances.map do |instance| %> \
+      --cluster.peers="<%= instance.address %>:<%= thanos_store.p('thanos_store.cluster.port') %>" \
+        <% end %> \
+      <% end %> \
+      <% if_p('thanos_query.cluster.gossip_interval') do |gossip_interval| %> \
+      --cluster.gossip-interval="<%= gossip_interval %>" \
+      <% end %> \
+      <% if_p('thanos_query.cluster.pushpull_interval') do |pushpull_interval| %> \
+      --cluster.pushpull-interval="<%= bucket %>" \
+      <% end %> \
+      <% if_p('thanos_query.cluster.refresh_interval') do |refresh_interval| %> \
+      --cluster.refresh-interval="<%= refresh_interval %>" \
+      <% end %> \
+      <% if_p('thanos_query.query.timeout') do |timeout| %> \
+      --query.timeout="<%= timeout %>" \
+      <% end %> \
+      <% if_p('thanos_query.query.max_concurrent') do |max_concurrent| %> \
+      --query.max-concurrent="<%= max_concurrent %>" \
+      <% end %> \
+      <% if_p('thanos_query.query.replica_label') do |replica_label| %> \
+      --query.replica-label="<%= replica_label %>" \
+      <% end %> \
+      <% if_p('thanos_query.query.auto_downsampling') do |auto_downsampling| %> \
+      <%= auto_downsampling ? "--query.auto-downsampling " : "" %> \
+      <% end %> \
+      >>  ${LOG_DIR}/thanos_query.stdout.log \
+      2>> ${LOG_DIR}/thanos_query.stderr.log
+    ;;
+
+  stop)
+    kill_and_wait ${PIDFILE}
+    ;;
+
+  *)
+    echo "Usage: $0 {start|stop}"
+    exit 1
+  ;;
+
+esac
+exit 0

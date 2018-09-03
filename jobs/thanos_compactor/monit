@@ -1,0 +1,5 @@
+check process thanos_compactor
+  with pidfile /var/vcap/sys/run/thanos_compactor/thanos_compactor.pid
+  start program "/var/vcap/jobs/thanos_compactor/bin/thanos_compactor_ctl start"
+  stop program "/var/vcap/jobs/thanos_compactor/bin/thanos_compactor_ctl stop"
+  group vcap

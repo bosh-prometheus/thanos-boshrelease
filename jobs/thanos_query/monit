@@ -1,0 +1,5 @@
+check process thanos_query
+  with pidfile /var/vcap/sys/run/thanos_query/thanos_query.pid
+  start program "/var/vcap/jobs/thanos_query/bin/thanos_query_ctl start"
+  stop program "/var/vcap/jobs/thanos_query/bin/thanos_query_ctl stop"
+  group vcap

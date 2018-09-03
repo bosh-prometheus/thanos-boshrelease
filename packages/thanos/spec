@@ -1,0 +1,6 @@
+---
+name: thanos
+
+files:
+  - common/utils.sh
+  - thanos/thanos-0.1.0-rc.2.linux-amd64.tar.gz
